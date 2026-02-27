@@ -72,11 +72,11 @@ import { createEditTool, editTool } from "./edit.js";
 import { createFindTool, findTool } from "./find.js";
 import { createGrepTool, grepTool } from "./grep.js";
 import { createLsTool, lsTool } from "./ls.js";
+import { paperTools } from "./paper-mcp.js";
 import { createReadTool, type ReadToolOptions, readTool } from "./read.js";
 import { createWriteTool, writeTool } from "./write.js";
-import { paperTools } from "./paper-mcp.js";
 
-export { paperTools, paperToolNames, isPaperRunning } from "./paper-mcp.js";
+export { isPaperRunning, paperToolNames, paperTools } from "./paper-mcp.js";
 
 /** Tool type (AgentTool from pi-ai) */
 export type Tool = AgentTool<any>;

@@ -7,8 +7,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, w
 import { dirname, join } from "path";
 import { CONFIG_DIR_NAME, getAgentDir, getBinDir } from "./config.js";
 
-const MIGRATION_GUIDE_URL =
-	"https://paper.design/docs/changelog#extensions-migration";
+const MIGRATION_GUIDE_URL = "https://paper.design/docs/changelog#extensions-migration";
 const EXTENSIONS_DOC_URL = "https://paper.design/docs/extensions";
 
 /**

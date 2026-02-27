@@ -91,7 +91,7 @@ export function buildSystemPrompt(options: BuildSystemPromptOptions = {}): strin
 
 	const readmePath = getReadmePath();
 	const docsPath = getDocsPath();
-	const examplesPath = getExamplesPath();
+	const _examplesPath = getExamplesPath();
 
 	const tools = (selectedTools || ["read", "bash", "edit", "write"]).filter((t) => t in toolDescriptions);
 	const toolsList = tools.length > 0 ? tools.map((t) => `- ${t}: ${toolDescriptions[t]}`).join("\n") : "(none)";

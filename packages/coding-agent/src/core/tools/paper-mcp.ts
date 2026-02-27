@@ -6,7 +6,7 @@
  */
 
 import type { AgentTool, AgentToolResult } from "@mariozechner/pi-agent-core";
-import { Type, type TSchema } from "@sinclair/typebox";
+import { type TSchema, Type } from "@sinclair/typebox";
 
 const PAPER_MCP_URL = "http://127.0.0.1:29979/mcp";
 const TIMEOUT_MS = 30_000;
@@ -85,7 +85,9 @@ async function callPaperMcp(
 
 // ── Result formatting ───────────────────────────────────────────────────────
 
-function formatMcpResult(result: unknown): Array<{ type: "text"; text: string } | { type: "image"; data: string; mimeType: string }> {
+function formatMcpResult(
+	result: unknown,
+): Array<{ type: "text"; text: string } | { type: "image"; data: string; mimeType: string }> {
 	if (!result || typeof result !== "object") {
 		return [{ type: "text", text: JSON.stringify(result, null, 2) }];
 	}
@@ -108,7 +110,7 @@ function formatMcpResult(result: unknown): Array<{ type: "text"; text: string } 
 			parts.push({
 				type: "image",
 				data: entry.data,
-				mimeType: (typeof entry.mimeType === "string" ? entry.mimeType : "image/png"),
+				mimeType: typeof entry.mimeType === "string" ? entry.mimeType : "image/png",
 			});
 		}
 	}
@@ -144,7 +146,7 @@ function createPaperTool(def: PaperToolDef): AgentTool {
 		description: def.description,
 		parameters: def.parameters,
 		async execute(
-			toolCallId: string,
+			_toolCallId: string,
 			params: unknown,
 			signal?: AbortSignal,
 		): Promise<AgentToolResult<Record<string, unknown>>> {
@@ -175,7 +177,8 @@ export const paperTools: AgentTool[] = [
 	createPaperTool({
 		name: "paper_get_basic_info",
 		label: "Paper: Get Basic Info",
-		description: "Get file name, page name, node count, and list of artboards with dimensions from the currently open Paper file.",
+		description:
+			"Get file name, page name, node count, and list of artboards with dimensions from the currently open Paper file.",
 		mcpName: "get_basic_info",
 		parameters: Type.Object({}),
 	}),
@@ -183,7 +186,8 @@ export const paperTools: AgentTool[] = [
 	createPaperTool({
 		name: "paper_get_selection",
 		label: "Paper: Get Selection",
-		description: "Get details about the currently selected nodes in Paper Desktop (IDs, names, types, size, artboard). Use this to see what the user is pointing at.",
+		description:
+			"Get details about the currently selected nodes in Paper Desktop (IDs, names, types, size, artboard). Use this to see what the user is pointing at.",
 		mcpName: "get_selection",
 		parameters: Type.Object({}),
 	}),
@@ -191,7 +195,8 @@ export const paperTools: AgentTool[] = [
 	createPaperTool({
 		name: "paper_get_node_info",
 		label: "Paper: Get Node Info",
-		description: "Get details for a specific node by ID: size, visibility, lock state, parent, children, text content.",
+		description:
+			"Get details for a specific node by ID: size, visibility, lock state, parent, children, text content.",
 		mcpName: "get_node_info",
 		parameters: Type.Object({
 			id: Type.String({ description: "Node ID to inspect" }),
@@ -213,7 +218,8 @@ export const paperTools: AgentTool[] = [
 	createPaperTool({
 		name: "paper_get_tree_summary",
 		label: "Paper: Get Tree Summary",
-		description: "Get a compact text summary of a node's subtree hierarchy. Use optional depth to limit how deep to go.",
+		description:
+			"Get a compact text summary of a node's subtree hierarchy. Use optional depth to limit how deep to go.",
 		mcpName: "get_tree_summary",
 		parameters: Type.Object({
 			id: Type.String({ description: "Root node ID" }),
@@ -225,7 +231,8 @@ export const paperTools: AgentTool[] = [
 	createPaperTool({
 		name: "paper_get_screenshot",
 		label: "Paper: Get Screenshot",
-		description: "Get a screenshot of a node by ID as a base64 image. Use scale 1 or 2 for resolution. Essential for visually verifying designs.",
+		description:
+			"Get a screenshot of a node by ID as a base64 image. Use scale 1 or 2 for resolution. Essential for visually verifying designs.",
 		mcpName: "get_screenshot",
 		parameters: Type.Object({
 			id: Type.String({ description: "Node ID to screenshot" }),
@@ -237,7 +244,8 @@ export const paperTools: AgentTool[] = [
 	createPaperTool({
 		name: "paper_get_jsx",
 		label: "Paper: Get JSX",
-		description: "Get JSX representation of a node and its descendants. Choose 'tailwind' or 'inline' styles format. This is the primary tool for translating designs to code.",
+		description:
+			"Get JSX representation of a node and its descendants. Choose 'tailwind' or 'inline' styles format. This is the primary tool for translating designs to code.",
 		mcpName: "get_jsx",
 		parameters: Type.Object({
 			id: Type.String({ description: "Node ID" }),
@@ -249,7 +257,8 @@ export const paperTools: AgentTool[] = [
 	createPaperTool({
 		name: "paper_get_computed_styles",
 		label: "Paper: Get Computed Styles",
-		description: "Get computed CSS styles for one or more nodes. Returns exact values for spacing, colors, typography, etc.",
+		description:
+			"Get computed CSS styles for one or more nodes. Returns exact values for spacing, colors, typography, etc.",
 		mcpName: "get_computed_styles",
 		parameters: Type.Object({
 			ids: Type.Array(Type.String(), { description: "Array of node IDs" }),
@@ -271,7 +280,8 @@ export const paperTools: AgentTool[] = [
 	createPaperTool({
 		name: "paper_get_font_family_info",
 		label: "Paper: Get Font Info",
-		description: "Look up whether a font family is available on the user's machine or Google Fonts. Inspect weights and styles.",
+		description:
+			"Look up whether a font family is available on the user's machine or Google Fonts. Inspect weights and styles.",
 		mcpName: "get_font_family_info",
 		parameters: Type.Object({
 			family: Type.String({ description: "Font family name to look up" }),
@@ -292,7 +302,8 @@ export const paperTools: AgentTool[] = [
 	createPaperTool({
 		name: "paper_find_placement",
 		label: "Paper: Find Placement",
-		description: "Get suggested x/y coordinates on the canvas to place a new artboard without overlapping existing ones.",
+		description:
+			"Get suggested x/y coordinates on the canvas to place a new artboard without overlapping existing ones.",
 		mcpName: "find_placement",
 		parameters: Type.Object({
 			width: Type.Optional(Type.Number({ description: "Artboard width" })),
@@ -309,14 +320,17 @@ export const paperTools: AgentTool[] = [
 		mcpName: "create_artboard",
 		parameters: Type.Object({
 			name: Type.Optional(Type.String({ description: "Artboard name" })),
-			styles: Type.Optional(Type.Record(Type.String(), Type.Unknown(), { description: "CSS styles (width, height, etc.)" })),
+			styles: Type.Optional(
+				Type.Record(Type.String(), Type.Unknown(), { description: "CSS styles (width, height, etc.)" }),
+			),
 		}),
 	}),
 
 	createPaperTool({
 		name: "paper_write_html",
 		label: "Paper: Write HTML",
-		description: "Parse HTML and add or replace nodes in the Paper file. Use mode 'insert-children' to add inside a node, or 'replace' to replace a node's content.",
+		description:
+			"Parse HTML and add or replace nodes in the Paper file. Use mode 'insert-children' to add inside a node, or 'replace' to replace a node's content.",
 		mcpName: "write_html",
 		parameters: Type.Object({
 			id: Type.String({ description: "Target node ID" }),
@@ -332,10 +346,13 @@ export const paperTools: AgentTool[] = [
 		description: "Set the text content of one or more Text nodes (batch operation).",
 		mcpName: "set_text_content",
 		parameters: Type.Object({
-			updates: Type.Array(Type.Object({
-				id: Type.String({ description: "Text node ID" }),
-				text: Type.String({ description: "New text content" }),
-			}), { description: "Array of { id, text } updates" }),
+			updates: Type.Array(
+				Type.Object({
+					id: Type.String({ description: "Text node ID" }),
+					text: Type.String({ description: "New text content" }),
+				}),
+				{ description: "Array of { id, text } updates" },
+			),
 		}),
 		mapArgs: (a) => ({
 			updates: (a.updates as Array<{ id: string; text: string }>).map((u) => ({
@@ -351,10 +368,13 @@ export const paperTools: AgentTool[] = [
 		description: "Rename one or more layers in the Paper file (batch operation).",
 		mcpName: "rename_nodes",
 		parameters: Type.Object({
-			updates: Type.Array(Type.Object({
-				id: Type.String({ description: "Node ID" }),
-				name: Type.String({ description: "New layer name" }),
-			}), { description: "Array of { id, name } updates" }),
+			updates: Type.Array(
+				Type.Object({
+					id: Type.String({ description: "Node ID" }),
+					name: Type.String({ description: "New layer name" }),
+				}),
+				{ description: "Array of { id, name } updates" },
+			),
 		}),
 		mapArgs: (a) => ({
 			updates: (a.updates as Array<{ id: string; name: string }>).map((u) => ({
@@ -383,10 +403,13 @@ export const paperTools: AgentTool[] = [
 		description: "Update CSS styles on one or more nodes in the Paper file.",
 		mcpName: "update_styles",
 		parameters: Type.Object({
-			updates: Type.Array(Type.Object({
-				id: Type.String({ description: "Node ID" }),
-				styles: Type.Record(Type.String(), Type.Unknown(), { description: "CSS styles to apply" }),
-			}), { description: "Array of { id, styles } updates" }),
+			updates: Type.Array(
+				Type.Object({
+					id: Type.String({ description: "Node ID" }),
+					styles: Type.Record(Type.String(), Type.Unknown(), { description: "CSS styles to apply" }),
+				}),
+				{ description: "Array of { id, styles } updates" },
+			),
 		}),
 		mapArgs: (a) => ({
 			updates: (a.updates as Array<{ id: string; styles: Record<string, unknown> }>).map((u) => ({

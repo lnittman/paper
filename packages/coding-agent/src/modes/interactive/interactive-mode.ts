@@ -43,14 +43,7 @@ import {
 	visibleWidth,
 } from "@mariozechner/pi-tui";
 import { spawn, spawnSync } from "child_process";
-import {
-	APP_NAME,
-	getAuthPath,
-	getDebugLogPath,
-	getShareViewerUrl,
-	getUpdateInstruction,
-	VERSION,
-} from "../../config.js";
+import { getAuthPath, getDebugLogPath, getShareViewerUrl, getUpdateInstruction, VERSION } from "../../config.js";
 import { type AgentSession, type AgentSessionEvent, parseSkillBlock } from "../../core/agent-session.js";
 import type { CompactionResult } from "../../core/compaction/index.js";
 import type {
@@ -68,7 +61,7 @@ import type { ResourceDiagnostic } from "../../core/resource-loader.js";
 import { type SessionContext, SessionManager } from "../../core/session-manager.js";
 import { BUILTIN_SLASH_COMMANDS } from "../../core/slash-commands.js";
 import type { TruncationResult } from "../../core/tools/truncate.js";
-import { getChangelogPath, getNewEntries, parseChangelog } from "../../utils/changelog.js";
+import { getChangelogPath, parseChangelog } from "../../utils/changelog.js";
 import { copyToClipboard } from "../../utils/clipboard.js";
 import { extensionForImageMimeType, readClipboardImage } from "../../utils/clipboard-image.js";
 import { ensureTool } from "../../utils/tools-manager.js";
@@ -86,7 +79,7 @@ import { ExtensionEditorComponent } from "./components/extension-editor.js";
 import { ExtensionInputComponent } from "./components/extension-input.js";
 import { ExtensionSelectorComponent } from "./components/extension-selector.js";
 import { FooterComponent } from "./components/footer.js";
-import { appKey, appKeyHint, editorKey, keyHint, rawKeyHint } from "./components/keybinding-hints.js";
+import { appKey, appKeyHint, editorKey, rawKeyHint } from "./components/keybinding-hints.js";
 import { LoginDialogComponent } from "./components/login-dialog.js";
 import { ModelSelectorComponent } from "./components/model-selector.js";
 import { OAuthSelectorComponent } from "./components/oauth-selector.js";
@@ -617,30 +610,50 @@ export class InteractiveMode {
 						const infoResponse = await fetch("http://127.0.0.1:29979/mcp", {
 							method: "POST",
 							headers: { "Content-Type": "application/json", Accept: "application/json, text/event-stream" },
-							body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "get_basic_info", arguments: {} } }),
+							body: JSON.stringify({
+								jsonrpc: "2.0",
+								id: 1,
+								method: "tools/call",
+								params: { name: "get_basic_info", arguments: {} },
+							}),
 							signal: AbortSignal.timeout(3000),
 						});
-						const data = await infoResponse.json() as { result?: { content?: Array<{ text?: string }> } };
+						const data = (await infoResponse.json()) as { result?: { content?: Array<{ text?: string }> } };
 						const text = data?.result?.content?.[0]?.text;
 						if (text) {
 							const parsed = JSON.parse(text);
 							const fileName = parsed.fileName || "unknown";
-							this.footerDataProvider.setExtensionStatus("paper", `${theme.fg("accent", "◰")} ${theme.fg("success", fileName)}`);
+							this.footerDataProvider.setExtensionStatus(
+								"paper",
+								`${theme.fg("accent", "◰")} ${theme.fg("success", fileName)}`,
+							);
 						} else {
-							this.footerDataProvider.setExtensionStatus("paper", `${theme.fg("accent", "◰")} ${theme.fg("success", "connected")}`);
+							this.footerDataProvider.setExtensionStatus(
+								"paper",
+								`${theme.fg("accent", "◰")} ${theme.fg("success", "connected")}`,
+							);
 						}
 					} catch {
-						this.footerDataProvider.setExtensionStatus("paper", `${theme.fg("accent", "◰")} ${theme.fg("success", "connected")}`);
+						this.footerDataProvider.setExtensionStatus(
+							"paper",
+							`${theme.fg("accent", "◰")} ${theme.fg("success", "connected")}`,
+						);
 					}
 				} else {
-					this.footerDataProvider.setExtensionStatus("paper", `${theme.fg("accent", "◰")} ${theme.fg("dim", "disconnected")}`);
+					this.footerDataProvider.setExtensionStatus(
+						"paper",
+						`${theme.fg("accent", "◰")} ${theme.fg("dim", "disconnected")}`,
+					);
 				}
 				this.ui.requestRender();
 			}
 		} catch {
 			if (this.paperLastStatus !== false) {
 				this.paperLastStatus = false;
-				this.footerDataProvider.setExtensionStatus("paper", `${theme.fg("accent", "◰")} ${theme.fg("dim", "disconnected")}`);
+				this.footerDataProvider.setExtensionStatus(
+					"paper",
+					`${theme.fg("accent", "◰")} ${theme.fg("dim", "disconnected")}`,
+				);
 				this.ui.requestRender();
 			}
 		}
@@ -1933,27 +1946,37 @@ export class InteractiveMode {
 			}
 			if (text === "/artboards") {
 				this.editor.setText("");
-				await this.session.prompt("Use paper_get_basic_info to list all artboards in the current Paper file. Show their names, dimensions, and IDs in a clean table.");
+				await this.session.prompt(
+					"Use paper_get_basic_info to list all artboards in the current Paper file. Show their names, dimensions, and IDs in a clean table.",
+				);
 				return;
 			}
 			if (text === "/selection") {
 				this.editor.setText("");
-				await this.session.prompt("Use paper_get_selection to show what I currently have selected in Paper Desktop. Include node IDs, names, types, and dimensions.");
+				await this.session.prompt(
+					"Use paper_get_selection to show what I currently have selected in Paper Desktop. Include node IDs, names, types, and dimensions.",
+				);
 				return;
 			}
 			if (text === "/screenshot") {
 				this.editor.setText("");
-				await this.session.prompt("Use paper_get_selection to find what I have selected, then use paper_get_screenshot to capture it. Show the screenshot.");
+				await this.session.prompt(
+					"Use paper_get_selection to find what I have selected, then use paper_get_screenshot to capture it. Show the screenshot.",
+				);
 				return;
 			}
 			if (text === "/jsx") {
 				this.editor.setText("");
-				await this.session.prompt("Use paper_get_selection to find what I have selected, then use paper_get_jsx with styleFormat 'tailwind' to get the JSX code. Show the clean JSX output.");
+				await this.session.prompt(
+					"Use paper_get_selection to find what I have selected, then use paper_get_jsx with styleFormat 'tailwind' to get the JSX code. Show the clean JSX output.",
+				);
 				return;
 			}
 			if (text === "/status") {
 				this.editor.setText("");
-				await this.session.prompt("Use paper_get_basic_info to check if Paper Desktop is running and connected. Report the connection status, file name, and artboard count.");
+				await this.session.prompt(
+					"Use paper_get_basic_info to check if Paper Desktop is running and connected. Report the connection status, file name, and artboard count.",
+				);
 				return;
 			}
 
