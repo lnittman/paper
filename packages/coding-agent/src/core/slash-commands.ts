@@ -17,6 +17,7 @@ export interface BuiltinSlashCommand {
 
 export const BUILTIN_SLASH_COMMANDS: ReadonlyArray<BuiltinSlashCommand> = [
 	// Paper commands
+	{ name: "site", description: "Recreate a website in Paper — /site <url>" },
 	{ name: "artboards", description: "List artboards in the open Paper file" },
 	{ name: "selection", description: "Show what's selected in Paper Desktop" },
 	{ name: "screenshot", description: "Screenshot the selected node in Paper" },

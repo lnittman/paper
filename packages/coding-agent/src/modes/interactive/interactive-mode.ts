@@ -1895,6 +1895,42 @@ export class InteractiveMode {
 			if (!text) return;
 
 			// Paper slash commands — inject as user messages to let the agent handle via tools
+			if (text.startsWith("/site")) {
+				const url = text.replace("/site", "").trim();
+				if (!url) {
+					this.editor.setText("/site ");
+					return;
+				}
+				this.editor.setText("");
+				await this.session.prompt(`Recreate ${url} in Paper Desktop. Follow these steps exactly:
+
+## Phase 1: Capture the live site
+1. Use browse_screenshot to capture ${url} at desktop viewport (1440px wide). Show me the screenshot.
+2. Use browse_snapshot to get the page structure — headings, nav, sections, CTAs.
+3. Use browse_evaluate to extract key design tokens from the page:
+   - Run: document.defaultView.getComputedStyle(document.body).backgroundColor
+   - Run: document.defaultView.getComputedStyle(document.body).fontFamily
+   - Run: document.defaultView.getComputedStyle(document.body).color
+   - Extract colors, fonts, and spacing from the hero/header sections too.
+
+## Phase 2: Set up the canvas
+4. Use paper_find_placement to get a clear position.
+5. Use paper_create_artboard with name "${url.replace(/https?:\/\//, "").replace(/\/$/, "")}" at 1440×900.
+
+## Phase 3: Build section by section
+6. Start with the nav/header — use paper_write_html with ONLY literal inline CSS (px values, hex colors, no Tailwind, no CSS vars). Every element needs explicit width and height.
+7. Use paper_get_screenshot to verify after each write. If you see 0×0 nodes in paper_get_tree_summary, delete and rewrite.
+8. Build the hero section next, then continue down the page.
+9. Name layers using the layer-name attribute: <div layer-name="Header" style="...">
+
+## Rules (non-negotiable)
+- paper_write_html accepts ONLY literal inline CSS — Tailwind classes are SILENTLY IGNORED
+- Every parent element must have explicit width and height in px
+- Use display:flex for layouts, with gap/padding/margin in px
+- Colors must be resolved: hex (#fff), rgb(), oklch() — no var() or Tailwind colors
+- Verify each section with paper_get_screenshot before moving to the next`);
+				return;
+			}
 			if (text === "/artboards") {
 				this.editor.setText("");
 				await this.session.prompt("Use paper_get_basic_info to list all artboards in the current Paper file. Show their names, dimensions, and IDs in a clean table.");
