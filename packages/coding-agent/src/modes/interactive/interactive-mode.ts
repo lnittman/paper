@@ -485,6 +485,9 @@ export class InteractiveMode {
 
 		// Initialize available provider count for footer display
 		await this.updateAvailableProviderCount();
+
+		// Paper fork: start Paper Desktop connection status polling
+		this.startPaperStatusPolling();
 	}
 
 	/**
@@ -494,9 +497,9 @@ export class InteractiveMode {
 		const cwdBasename = path.basename(process.cwd());
 		const sessionName = this.sessionManager.getSessionName();
 		if (sessionName) {
-			this.ui.terminal.setTitle(`π - ${sessionName} - ${cwdBasename}`);
+			this.ui.terminal.setTitle(`◰ Paper - ${sessionName} - ${cwdBasename}`);
 		} else {
-			this.ui.terminal.setTitle(`π - ${cwdBasename}`);
+			this.ui.terminal.setTitle(`◰ Paper - ${cwdBasename}`);
 		}
 	}
 
@@ -577,6 +580,70 @@ export class InteractiveMode {
 	private getChangelogForDisplay(): string | undefined {
 		// Paper fork: no upstream changelog display
 		return undefined;
+	}
+
+	// =========================================================================
+	// Paper Desktop Connection Status
+	// =========================================================================
+
+	private paperStatusInterval: ReturnType<typeof setInterval> | null = null;
+	private paperLastStatus: boolean | null = null;
+
+	private startPaperStatusPolling(): void {
+		// Check immediately
+		this.checkPaperStatus();
+		// Then poll every 10 seconds
+		this.paperStatusInterval = setInterval(() => this.checkPaperStatus(), 10_000);
+	}
+
+	private async checkPaperStatus(): Promise<void> {
+		try {
+			const controller = new AbortController();
+			const timeout = setTimeout(() => controller.abort(), 2000);
+			const response = await fetch("http://127.0.0.1:29979/mcp", {
+				method: "POST",
+				headers: { "Content-Type": "application/json", Accept: "application/json, text/event-stream" },
+				body: JSON.stringify({ jsonrpc: "2.0", id: 0, method: "tools/list", params: {} }),
+				signal: controller.signal,
+			});
+			clearTimeout(timeout);
+
+			const connected = response.ok || response.status === 200;
+			if (connected !== this.paperLastStatus) {
+				this.paperLastStatus = connected;
+				if (connected) {
+					// Try to get file name
+					try {
+						const infoResponse = await fetch("http://127.0.0.1:29979/mcp", {
+							method: "POST",
+							headers: { "Content-Type": "application/json", Accept: "application/json, text/event-stream" },
+							body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "get_basic_info", arguments: {} } }),
+							signal: AbortSignal.timeout(3000),
+						});
+						const data = await infoResponse.json() as { result?: { content?: Array<{ text?: string }> } };
+						const text = data?.result?.content?.[0]?.text;
+						if (text) {
+							const parsed = JSON.parse(text);
+							const fileName = parsed.fileName || "unknown";
+							this.footerDataProvider.setExtensionStatus("paper", `${theme.fg("accent", "◰")} ${theme.fg("success", fileName)}`);
+						} else {
+							this.footerDataProvider.setExtensionStatus("paper", `${theme.fg("accent", "◰")} ${theme.fg("success", "connected")}`);
+						}
+					} catch {
+						this.footerDataProvider.setExtensionStatus("paper", `${theme.fg("accent", "◰")} ${theme.fg("success", "connected")}`);
+					}
+				} else {
+					this.footerDataProvider.setExtensionStatus("paper", `${theme.fg("accent", "◰")} ${theme.fg("dim", "disconnected")}`);
+				}
+				this.ui.requestRender();
+			}
+		} catch {
+			if (this.paperLastStatus !== false) {
+				this.paperLastStatus = false;
+				this.footerDataProvider.setExtensionStatus("paper", `${theme.fg("accent", "◰")} ${theme.fg("dim", "disconnected")}`);
+				this.ui.requestRender();
+			}
+		}
 	}
 
 	private getMarkdownThemeWithSettings(): MarkdownTheme {
@@ -1827,6 +1894,33 @@ export class InteractiveMode {
 			text = text.trim();
 			if (!text) return;
 
+			// Paper slash commands — inject as user messages to let the agent handle via tools
+			if (text === "/artboards") {
+				this.editor.setText("");
+				await this.session.prompt("Use paper_get_basic_info to list all artboards in the current Paper file. Show their names, dimensions, and IDs in a clean table.");
+				return;
+			}
+			if (text === "/selection") {
+				this.editor.setText("");
+				await this.session.prompt("Use paper_get_selection to show what I currently have selected in Paper Desktop. Include node IDs, names, types, and dimensions.");
+				return;
+			}
+			if (text === "/screenshot") {
+				this.editor.setText("");
+				await this.session.prompt("Use paper_get_selection to find what I have selected, then use paper_get_screenshot to capture it. Show the screenshot.");
+				return;
+			}
+			if (text === "/jsx") {
+				this.editor.setText("");
+				await this.session.prompt("Use paper_get_selection to find what I have selected, then use paper_get_jsx with styleFormat 'tailwind' to get the JSX code. Show the clean JSX output.");
+				return;
+			}
+			if (text === "/status") {
+				this.editor.setText("");
+				await this.session.prompt("Use paper_get_basic_info to check if Paper Desktop is running and connected. Report the connection status, file name, and artboard count.");
+				return;
+			}
+
 			// Handle commands
 			if (text === "/settings") {
 				this.showSettingsSelector();
@@ -2552,6 +2646,12 @@ export class InteractiveMode {
 		// Drain any in-flight Kitty key release events before stopping.
 		// This prevents escape sequences from leaking to the parent shell over slow SSH.
 		await this.ui.terminal.drainInput(1000);
+
+		// Paper fork: clean up status polling
+		if (this.paperStatusInterval) {
+			clearInterval(this.paperStatusInterval);
+			this.paperStatusInterval = null;
+		}
 
 		this.stop();
 		process.exit(0);

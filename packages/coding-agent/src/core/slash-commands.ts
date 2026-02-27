@@ -16,6 +16,13 @@ export interface BuiltinSlashCommand {
 }
 
 export const BUILTIN_SLASH_COMMANDS: ReadonlyArray<BuiltinSlashCommand> = [
+	// Paper commands
+	{ name: "artboards", description: "List artboards in the open Paper file" },
+	{ name: "selection", description: "Show what's selected in Paper Desktop" },
+	{ name: "screenshot", description: "Screenshot the selected node in Paper" },
+	{ name: "jsx", description: "Get JSX for the selected node" },
+	{ name: "status", description: "Check Paper Desktop connection status" },
+	// General commands
 	{ name: "settings", description: "Open settings menu" },
 	{ name: "model", description: "Select model (opens selector UI)" },
 	{ name: "scoped-models", description: "Enable/disable models for Ctrl+P cycling" },
@@ -24,7 +31,6 @@ export const BUILTIN_SLASH_COMMANDS: ReadonlyArray<BuiltinSlashCommand> = [
 	{ name: "copy", description: "Copy last agent message to clipboard" },
 	{ name: "name", description: "Set session display name" },
 	{ name: "session", description: "Show session info and stats" },
-	{ name: "changelog", description: "Show changelog entries" },
 	{ name: "hotkeys", description: "Show all keyboard shortcuts" },
 	{ name: "fork", description: "Create a new fork from a previous message" },
 	{ name: "tree", description: "Navigate session tree (switch branches)" },
