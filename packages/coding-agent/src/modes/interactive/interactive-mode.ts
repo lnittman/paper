@@ -381,7 +381,11 @@ export class InteractiveMode {
 
 		// Add header with keybindings from config (unless silenced)
 		if (this.options.verbose || !this.settingsManager.getQuietStartup()) {
-			const logo = theme.bold(theme.fg("accent", APP_NAME)) + theme.fg("dim", ` v${this.version}`);
+			// Paper logo banner
+			const logoLines = [
+				`  ${theme.fg("accent", "◰◲")}  ${theme.bold(theme.fg("accent", "Paper"))} ${theme.fg("dim", `v${this.version}`)}`,
+				`  ${theme.fg("dim", "design-to-code agent · paper.design")}`,
+			].join("\n");
 
 			// Build startup instructions using keybinding hint helpers
 			const kb = this.keybindings;
@@ -389,26 +393,17 @@ export class InteractiveMode {
 
 			const instructions = [
 				hint("interrupt", "to interrupt"),
-				hint("clear", "to clear"),
 				rawKeyHint(`${appKey(kb, "clear")} twice`, "to exit"),
-				hint("exit", "to exit (empty)"),
-				hint("suspend", "to suspend"),
-				keyHint("deleteToLineEnd", "to delete to end"),
-				hint("cycleThinkingLevel", "to cycle thinking level"),
 				rawKeyHint(`${appKey(kb, "cycleModelForward")}/${appKey(kb, "cycleModelBackward")}`, "to cycle models"),
 				hint("selectModel", "to select model"),
+				hint("cycleThinkingLevel", "to cycle thinking"),
 				hint("expandTools", "to expand tools"),
-				hint("toggleThinking", "to expand thinking"),
-				hint("externalEditor", "for external editor"),
 				rawKeyHint("/", "for commands"),
 				rawKeyHint("!", "to run bash"),
-				rawKeyHint("!!", "to run bash (no context)"),
-				hint("followUp", "to queue follow-up"),
-				hint("dequeue", "to edit all queued messages"),
 				hint("pasteImage", "to paste image"),
 				rawKeyHint("drop files", "to attach"),
 			].join("\n");
-			this.builtInHeader = new Text(`${logo}\n${instructions}`, 1, 0);
+			this.builtInHeader = new Text(`${logoLines}\n${instructions}`, 1, 0);
 
 			// Setup UI layout
 			this.headerContainer.addChild(new Spacer(1));
@@ -580,27 +575,7 @@ export class InteractiveMode {
 	 * Only shows new entries since last seen version, skips for resumed sessions.
 	 */
 	private getChangelogForDisplay(): string | undefined {
-		// Skip changelog for resumed/continued sessions (already have messages)
-		if (this.session.state.messages.length > 0) {
-			return undefined;
-		}
-
-		const lastVersion = this.settingsManager.getLastChangelogVersion();
-		const changelogPath = getChangelogPath();
-		const entries = parseChangelog(changelogPath);
-
-		if (!lastVersion) {
-			// Fresh install - just record the version, don't show changelog
-			this.settingsManager.setLastChangelogVersion(VERSION);
-			return undefined;
-		} else {
-			const newEntries = getNewEntries(entries, lastVersion);
-			if (newEntries.length > 0) {
-				this.settingsManager.setLastChangelogVersion(VERSION);
-				return newEntries.map((e) => e.content).join("\n\n");
-			}
-		}
-
+		// Paper fork: no upstream changelog display
 		return undefined;
 	}
 
@@ -1835,7 +1810,7 @@ export class InteractiveMode {
 			// Write to temp file
 			const tmpDir = os.tmpdir();
 			const ext = extensionForImageMimeType(image.mimeType) ?? "png";
-			const fileName = `pi-clipboard-${crypto.randomUUID()}.${ext}`;
+			const fileName = `paper-clipboard-${crypto.randomUUID()}.${ext}`;
 			const filePath = path.join(tmpDir, fileName);
 			fs.writeFileSync(filePath, Buffer.from(image.bytes));
 
@@ -2724,7 +2699,7 @@ export class InteractiveMode {
 		}
 
 		const currentText = this.editor.getExpandedText?.() ?? this.editor.getText();
-		const tmpFile = path.join(os.tmpdir(), `pi-editor-${Date.now()}.pi.md`);
+		const tmpFile = path.join(os.tmpdir(), `paper-editor-${Date.now()}.paper.md`);
 
 		try {
 			// Write current content to temp file

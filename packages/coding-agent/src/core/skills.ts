@@ -16,6 +16,7 @@ const IGNORE_FILE_NAMES = [".gitignore", ".ignore", ".fdignore"];
 
 /** Well-known documentation filenames that should never be treated as skills */
 const DOCUMENTATION_FILES = new Set([
+	"PAPER.md",
 	"AGENTS.md",
 	"CLAUDE.md",
 	"README.md",

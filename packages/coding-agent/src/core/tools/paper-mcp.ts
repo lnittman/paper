@@ -46,7 +46,7 @@ async function callPaperMcp(
 
 		const resp = await fetch(PAPER_MCP_URL, {
 			method: "POST",
-			headers: { "Content-Type": "application/json", Accept: "application/json" },
+			headers: { "Content-Type": "application/json", Accept: "application/json, text/event-stream" },
 			body,
 			signal: controller.signal,
 		});
@@ -57,7 +57,15 @@ async function callPaperMcp(
 			return { ok: false, error: `Paper MCP returned ${resp.status} ${resp.statusText}` };
 		}
 
-		const json = (await resp.json()) as JsonRpcResponse;
+		// The server may return SSE format (event: message\ndata: {...}) or raw JSON
+		const text = await resp.text();
+		let json: JsonRpcResponse;
+		const dataMatch = text.match(/^data: (.+)$/m);
+		if (dataMatch) {
+			json = JSON.parse(dataMatch[1]) as JsonRpcResponse;
+		} else {
+			json = JSON.parse(text) as JsonRpcResponse;
+		}
 		if (json.error) {
 			return { ok: false, error: `Paper MCP error: ${json.error.message}` };
 		}
@@ -125,6 +133,8 @@ interface PaperToolDef {
 	mcpName: string;
 	/** TypeBox parameter schema */
 	parameters: TSchema;
+	/** Optional: remap LLM-facing param names to MCP server param names */
+	mapArgs?: (args: Record<string, unknown>) => Record<string, unknown>;
 }
 
 function createPaperTool(def: PaperToolDef): AgentTool {
@@ -138,7 +148,10 @@ function createPaperTool(def: PaperToolDef): AgentTool {
 			params: unknown,
 			signal?: AbortSignal,
 		): Promise<AgentToolResult<Record<string, unknown>>> {
-			const args = (params && typeof params === "object" ? params : {}) as Record<string, unknown>;
+			let args = (params && typeof params === "object" ? params : {}) as Record<string, unknown>;
+			if (def.mapArgs) {
+				args = def.mapArgs(args);
+			}
 			const result = await callPaperMcp(def.mcpName, args, signal);
 			if (!result.ok) {
 				return {
@@ -183,6 +196,7 @@ export const paperTools: AgentTool[] = [
 		parameters: Type.Object({
 			id: Type.String({ description: "Node ID to inspect" }),
 		}),
+		mapArgs: (a) => ({ nodeId: a.id }),
 	}),
 
 	createPaperTool({
@@ -193,6 +207,7 @@ export const paperTools: AgentTool[] = [
 		parameters: Type.Object({
 			id: Type.String({ description: "Parent node ID" }),
 		}),
+		mapArgs: (a) => ({ nodeId: a.id }),
 	}),
 
 	createPaperTool({
@@ -204,6 +219,7 @@ export const paperTools: AgentTool[] = [
 			id: Type.String({ description: "Root node ID" }),
 			depth: Type.Optional(Type.Number({ description: "Max depth to traverse" })),
 		}),
+		mapArgs: (a) => ({ nodeId: a.id, ...(a.depth !== undefined ? { depth: a.depth } : {}) }),
 	}),
 
 	createPaperTool({
@@ -215,6 +231,7 @@ export const paperTools: AgentTool[] = [
 			id: Type.String({ description: "Node ID to screenshot" }),
 			scale: Type.Optional(Type.Number({ description: "Scale: 1 (default) or 2 for 2x resolution" })),
 		}),
+		mapArgs: (a) => ({ nodeId: a.id, ...(a.scale !== undefined ? { scale: a.scale } : {}) }),
 	}),
 
 	createPaperTool({
@@ -226,6 +243,7 @@ export const paperTools: AgentTool[] = [
 			id: Type.String({ description: "Node ID" }),
 			styleFormat: Type.Optional(Type.String({ description: "'tailwind' or 'inline' (default: tailwind)" })),
 		}),
+		mapArgs: (a) => ({ nodeId: a.id, ...(a.styleFormat !== undefined ? { format: a.styleFormat } : {}) }),
 	}),
 
 	createPaperTool({
@@ -236,6 +254,7 @@ export const paperTools: AgentTool[] = [
 		parameters: Type.Object({
 			ids: Type.Array(Type.String(), { description: "Array of node IDs" }),
 		}),
+		mapArgs: (a) => ({ nodeIds: a.ids }),
 	}),
 
 	createPaperTool({
@@ -246,6 +265,7 @@ export const paperTools: AgentTool[] = [
 		parameters: Type.Object({
 			id: Type.String({ description: "Node ID with image fill" }),
 		}),
+		mapArgs: (a) => ({ nodeId: a.id }),
 	}),
 
 	createPaperTool({
@@ -256,6 +276,7 @@ export const paperTools: AgentTool[] = [
 		parameters: Type.Object({
 			family: Type.String({ description: "Font family name to look up" }),
 		}),
+		mapArgs: (a) => ({ familyNames: [a.family] }),
 	}),
 
 	createPaperTool({
@@ -302,6 +323,7 @@ export const paperTools: AgentTool[] = [
 			html: Type.String({ description: "HTML string to write" }),
 			mode: Type.Optional(Type.String({ description: "'insert-children' or 'replace'" })),
 		}),
+		mapArgs: (a) => ({ targetNodeId: a.id, html: a.html, ...(a.mode !== undefined ? { mode: a.mode } : {}) }),
 	}),
 
 	createPaperTool({
@@ -314,6 +336,12 @@ export const paperTools: AgentTool[] = [
 				id: Type.String({ description: "Text node ID" }),
 				text: Type.String({ description: "New text content" }),
 			}), { description: "Array of { id, text } updates" }),
+		}),
+		mapArgs: (a) => ({
+			updates: (a.updates as Array<{ id: string; text: string }>).map((u) => ({
+				nodeId: u.id,
+				textContent: u.text,
+			})),
 		}),
 	}),
 
@@ -328,6 +356,12 @@ export const paperTools: AgentTool[] = [
 				name: Type.String({ description: "New layer name" }),
 			}), { description: "Array of { id, name } updates" }),
 		}),
+		mapArgs: (a) => ({
+			updates: (a.updates as Array<{ id: string; name: string }>).map((u) => ({
+				nodeId: u.id,
+				name: u.name,
+			})),
+		}),
 	}),
 
 	createPaperTool({
@@ -337,6 +371,9 @@ export const paperTools: AgentTool[] = [
 		mcpName: "duplicate_nodes",
 		parameters: Type.Object({
 			ids: Type.Array(Type.String(), { description: "Array of node IDs to duplicate" }),
+		}),
+		mapArgs: (a) => ({
+			nodes: (a.ids as string[]).map((id) => ({ id })),
 		}),
 	}),
 
@@ -351,6 +388,12 @@ export const paperTools: AgentTool[] = [
 				styles: Type.Record(Type.String(), Type.Unknown(), { description: "CSS styles to apply" }),
 			}), { description: "Array of { id, styles } updates" }),
 		}),
+		mapArgs: (a) => ({
+			updates: (a.updates as Array<{ id: string; styles: Record<string, unknown> }>).map((u) => ({
+				nodeIds: [u.id],
+				styles: u.styles,
+			})),
+		}),
 	}),
 
 	createPaperTool({
@@ -361,6 +404,7 @@ export const paperTools: AgentTool[] = [
 		parameters: Type.Object({
 			ids: Type.Array(Type.String(), { description: "Array of node IDs to delete" }),
 		}),
+		mapArgs: (a) => ({ nodeIds: a.ids }),
 	}),
 
 	createPaperTool({
@@ -371,6 +415,7 @@ export const paperTools: AgentTool[] = [
 		parameters: Type.Object({
 			ids: Type.Array(Type.String(), { description: "Array of artboard IDs to mark" }),
 		}),
+		mapArgs: (a) => ({ nodeIds: a.ids }),
 	}),
 
 	createPaperTool({
@@ -381,6 +426,7 @@ export const paperTools: AgentTool[] = [
 		parameters: Type.Object({
 			ids: Type.Array(Type.String(), { description: "Array of artboard IDs to unmark" }),
 		}),
+		mapArgs: (a) => (a.ids ? { nodeIds: a.ids } : {}),
 	}),
 ];
 

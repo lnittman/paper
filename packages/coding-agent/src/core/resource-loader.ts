@@ -55,7 +55,7 @@ function resolvePromptInput(input: string | undefined, description: string): str
 }
 
 function loadContextFileFromDir(dir: string): { path: string; content: string } | null {
-	const candidates = ["AGENTS.md", "CLAUDE.md"];
+	const candidates = ["PAPER.md", "AGENTS.md", "CLAUDE.md"];
 	for (const filename of candidates) {
 		const filePath = join(dir, filename);
 		if (existsSync(filePath)) {
@@ -81,8 +81,17 @@ function loadProjectContextFiles(
 	const contextFiles: Array<{ path: string; content: string }> = [];
 	const seenPaths = new Set<string>();
 
+	// Paper fork: check ~/.paper/PAPER.md (config root) first
+	const configRoot = resolve(resolvedAgentDir, "..");
+	const configRootContext = loadContextFileFromDir(configRoot);
+	if (configRootContext) {
+		contextFiles.push(configRootContext);
+		seenPaths.add(configRootContext.path);
+	}
+
+	// Then check ~/.paper/agent/ (agent dir)
 	const globalContext = loadContextFileFromDir(resolvedAgentDir);
-	if (globalContext) {
+	if (globalContext && !seenPaths.has(globalContext.path)) {
 		contextFiles.push(globalContext);
 		seenPaths.add(globalContext.path);
 	}

@@ -174,7 +174,7 @@ export function parseArgs(args: string[], extensionFlags?: Map<string, { type: "
 }
 
 export function printHelp(): void {
-	console.log(`${chalk.bold(APP_NAME)} - AI coding assistant with read, bash, edit, write tools
+	console.log(`${chalk.bold(APP_NAME)} - design-to-code agent for Paper Desktop
 
 ${chalk.bold("Usage:")}
   ${APP_NAME} [options] [@files...] [messages...]
@@ -294,9 +294,9 @@ ${chalk.bold("Environment Variables:")}
   AWS_BEARER_TOKEN_BEDROCK         - Bedrock API key (bearer token)
   AWS_REGION                       - AWS region for Amazon Bedrock (e.g., us-east-1)
   ${ENV_AGENT_DIR.padEnd(32)} - Session storage directory (default: ~/${CONFIG_DIR_NAME}/agent)
-  PI_PACKAGE_DIR                   - Override package directory (for Nix/Guix store paths)
-  PI_SHARE_VIEWER_URL              - Base URL for /share command (default: https://pi.dev/session/)
-  PI_AI_ANTIGRAVITY_VERSION        - Override Antigravity User-Agent version (e.g., 1.23.0)
+  PAPER_PACKAGE_DIR                - Override package directory (for Nix/Guix store paths)
+  PAPER_SHARE_VIEWER_URL           - Base URL for /share command (default: https://paper.design/session/)
+  PAPER_AI_ANTIGRAVITY_VERSION     - Override Antigravity User-Agent version (e.g., 1.23.0)
 
 ${chalk.bold("Available Tools (default: read, bash, edit, write):")}
   read   - Read file contents

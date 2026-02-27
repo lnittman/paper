@@ -107,7 +107,7 @@ export class ExtensionEditorComponent extends Container {
 		}
 
 		const currentText = this.editor.getText();
-		const tmpFile = path.join(os.tmpdir(), `pi-extension-editor-${Date.now()}.md`);
+		const tmpFile = path.join(os.tmpdir(), `paper-extension-editor-${Date.now()}.md`);
 
 		try {
 			fs.writeFileSync(tmpFile, currentText, "utf-8");

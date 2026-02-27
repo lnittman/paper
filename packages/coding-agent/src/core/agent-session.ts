@@ -2026,6 +2026,11 @@ export class AgentSession {
 			: ["read", "bash", "edit", "write"];
 		const baseActiveToolNames = options.activeToolNames ?? defaultActiveToolNames;
 		const activeToolNameSet = new Set<string>(baseActiveToolNames);
+
+		// Paper fork: always activate Paper MCP tools
+		for (const tool of _paperMcpTools) {
+			activeToolNameSet.add(tool.name);
+		}
 		if (options.includeAllExtensionTools) {
 			for (const tool of wrappedExtensionTools as AgentTool[]) {
 				activeToolNameSet.add(tool.name);

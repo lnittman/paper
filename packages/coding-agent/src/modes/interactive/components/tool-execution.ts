@@ -122,7 +122,7 @@ export class ToolExecutionComponent extends Container {
 	 * or the toolDefinition doesn't provide custom renderers.
 	 */
 	private shouldUseBuiltInRenderer(): boolean {
-		const isBuiltInName = this.toolName in allTools;
+		const isBuiltInName = this.toolName in allTools || this.toolName.startsWith("paper_");
 		const hasCustomRenderers = this.toolDefinition?.renderCall || this.toolDefinition?.renderResult;
 		return isBuiltInName && !hasCustomRenderers;
 	}
@@ -720,6 +720,44 @@ export class ToolExecutionComponent extends Container {
 						warnings.push("some lines truncated");
 					}
 					text += `\n${theme.fg("warning", `[Truncated: ${warnings.join(", ")}]`)}`;
+				}
+			}
+		} else if (this.toolName.startsWith("paper_")) {
+			// Paper MCP tools — clean display with label and key args
+			const shortName = this.toolName.replace("paper_", "");
+			const label = shortName.replace(/_/g, " ");
+			const icon = "◰";
+
+			// Build a concise args summary
+			let argSummary = "";
+			if (this.args) {
+				if (this.args.id) argSummary = theme.fg("accent", this.args.id);
+				else if (this.args.ids) argSummary = theme.fg("accent", `${this.args.ids.length} nodes`);
+				else if (this.args.html) argSummary = theme.fg("dim", `${this.args.html.length} chars`);
+				else if (this.args.topic) argSummary = theme.fg("accent", this.args.topic);
+				else if (this.args.family) argSummary = theme.fg("accent", this.args.family);
+				else if (this.args.name) argSummary = theme.fg("accent", this.args.name);
+				else if (this.args.updates) argSummary = theme.fg("accent", `${this.args.updates.length} updates`);
+			}
+
+			text = `${theme.fg("toolTitle", theme.bold(`${icon} ${label}`))}`;
+			if (argSummary) text += ` ${argSummary}`;
+
+			if (this.result) {
+				const output = this.getTextOutput();
+				if (output) {
+					const lines = output.split("\n");
+					const maxLines = this.expanded ? lines.length : 8;
+					const displayLines = lines.slice(0, maxLines);
+					const remaining = lines.length - maxLines;
+
+					text += `\n${theme.fg("toolOutput", displayLines.join("\n"))}`;
+					if (remaining > 0) {
+						text += `\n${theme.fg("dim", `... ${remaining} more lines (${keyHint("expandTools", "to expand")})`)}`;
+					}
+				}
+				if (this.result.isError) {
+					text += `\n${theme.fg("error", "✗ Error")}`;
 				}
 			}
 		} else {
