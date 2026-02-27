@@ -408,17 +408,6 @@ export const paperTools: AgentTool[] = [
 	}),
 
 	createPaperTool({
-		name: "paper_start_working_on_nodes",
-		label: "Paper: Start Working",
-		description: "Mark artboards as being worked on (shows a visual indicator in Paper Desktop). Call this before modifying artboards.",
-		mcpName: "start_working_on_nodes",
-		parameters: Type.Object({
-			ids: Type.Array(Type.String(), { description: "Array of artboard IDs to mark" }),
-		}),
-		mapArgs: (a) => ({ nodeIds: a.ids }),
-	}),
-
-	createPaperTool({
 		name: "paper_finish_working_on_nodes",
 		label: "Paper: Finish Working",
 		description: "Clear the working indicator from artboards. Call this after you're done modifying artboards.",
