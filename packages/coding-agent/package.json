@@ -1,5 +1,5 @@
 {
-	"name": "@luke/paper-coding-agent",
+	"name": "paper-coding-agent",
 	"version": "0.1.0",
 	"description": "Paper — design-to-code agent CLI powered by Paper Desktop MCP",
 	"type": "module",
@@ -83,11 +83,11 @@
 		"tui",
 		"agent"
 	],
-	"author": "Mario Zechner",
+	"author": "Luke Nittmann",
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/badlogic/pi-mono.git",
+		"url": "git+https://github.com/lnittman/paper.git",
 		"directory": "packages/coding-agent"
 	},
 	"engines": {
