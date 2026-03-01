@@ -55,7 +55,7 @@ function resolvePromptInput(input: string | undefined, description: string): str
 }
 
 function loadContextFileFromDir(dir: string): { path: string; content: string } | null {
-	const candidates = ["PAPER.md", "AGENTS.md", "CLAUDE.md"];
+	const candidates = ["PAPER-MONO.md", "PAPER.md", "AGENTS.md", "CLAUDE.md"];
 	for (const filename of candidates) {
 		const filePath = join(dir, filename);
 		if (existsSync(filePath)) {

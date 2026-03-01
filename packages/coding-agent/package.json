@@ -4,10 +4,11 @@
 	"description": "Paper — design-to-code agent CLI powered by Paper Desktop MCP",
 	"type": "module",
 	"piConfig": {
-		"name": "paper",
-		"configDir": ".paper"
+		"name": "paper-mono",
+		"configDir": ".paper-mono"
 	},
 	"bin": {
+		"paper-mono": "dist/cli.js",
 		"paper": "dist/cli.js"
 	},
 	"main": "./dist/index.js",
